@@ -1,48 +1,70 @@
-from fastapi import FastAPI
-from typing import Optional
-from fastapi.params import Body
-from pydantic import BaseModel
+from fastapi import FastAPI, Depends, status, Response, HTTPException
+from typing import Annotated
+import models, schemas
+from database import engine, SessionLocal
+from sqlalchemy.orm import Session
 
-app = FastAPI()
 
-class post(BaseModel):
-    title: str
-    content: str
-    published: bool =True
+app = FastAPI(
+    openapi_prefix="",
+    title="Blog API",
+    version="1.0.0",
+    description="This API is Created for testing, by the developer. Not for commercial purpose. Thank you!",
+)
+models.Base.metadata.create_all(bind=engine)
 
-@app.get("/")
-async def root():
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@app.get("/", status_code=status.HTTP_200_OK)
+async def credits():
     return {"message": "Welcome to the Blog API. Developed By MAnan Ahmed Broti. Website: AhmedManan.com"}
 
-@app.get("/blog")
-def index(limit = 10, published: bool=True, sort: Optional[str]= None):
-    if published:
-        return {f'{limit} published posts'}
-    else:
-        return {f'{limit} posts'}
+@app.get('/blog')
+def all_posts(db : Session = Depends(get_db)):
+    blogs = db.query(models.Blog).all()
+    return blogs
+
+@app.post('/blog', status_code = 201)
+def create_post(request : schemas.Blog, db : Session = Depends(get_db)):
+    new_blog=models.Blog(title=request.title,body=request.body)
+    db.add(new_blog)
+    db.commit()
+    db.refresh(new_blog)
+    return new_blog
+
+@app.get('/blog/{blog_id}', status_code=status.HTTP_200_OK)
+def get_post(blog_id, response : Response, db : Session = Depends(get_db)):
+    blog = db.query(models.Blog).filter(models.Blog.id== blog_id).first()
+    if not blog:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f'Post not available')
+        # response.status_code = status.HTTP_404_NOT_FOUND
+        # return {'Details':'Blog post not found!'}
+    return blog
+
+@app.put('/blog/{blog_id}', status_code=status.HTTP_202_ACCEPTED)
+def update_post(blog_id, request : schemas.Blog, db : Session = Depends(get_db)):
+    blog = db.query(models.Blog).filter(models.Blog.id== blog_id)
+
+    if not blog.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f'Post with ID={blog_id} not found')
     
-class Blog(BaseModel):
-    title:str
-    body:str
-    published: Optional [bool]
-    
-@app.post("/blog")
-def index(request: Blog):
-    return {f'Blog is created'}
+    blog.update(request.title,request.body)
+    db.commit()
+    return 'updated successfully'
 
 
-@app.get("/blog/unpublished")
-def show():
-    # fetch blog where id = id
-    return {'post': 'all unpublished blogs'}
+@app.delete('/blog/{blog_id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(blog_id, db : Session = Depends(get_db)):
+        blog = db.query(models.Blog).filter(models.Blog.id== blog_id)
 
-@app.get("/blog/{id}")
-def show(id:int):
-    # fetch blog where id = id
-    return {'post': id}
-
-
-@app.get("/blog/{id}/comments")
-def comments(id):
-    # fetch comments where blog id = id
-    return {'ok'}
+        if not blog.first():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f'Post with ID={blog_id} not found')
+        
+        blog.delete(synchronize_session=False)
+        db.commit()
+        return {f'Blog post deleted!'}
