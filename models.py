@@ -10,3 +10,15 @@ class Blog(Base):
     tags = Column(String)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    email = Column(String)  # Fixed typo here
+    password = Column(String)
+    user_type = Column(String)  # Renamed "type" to "user_type"
+    status = Column(String)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

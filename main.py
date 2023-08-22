@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, status, Response, HTTPException
-# from typing import Annotated
+from typing import List
 import models, schemas
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
@@ -24,7 +24,7 @@ def get_db():
 async def credits():
     return {"message": "Welcome to the Blog API. Developed By MAnan Ahmed Broti. Website: AhmedManan.com"}
 
-@app.get('/blog')
+@app.get('/blog', response_model=List[schemas.ShowBlog])
 def all_posts(db : Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     return blogs
@@ -37,7 +37,7 @@ def create_post(request : schemas.Blog, db : Session = Depends(get_db)):
     db.refresh(new_blog)
     return new_blog
 
-@app.get('/blog/{blog_id}', status_code=status.HTTP_200_OK)
+@app.get('/blog/{blog_id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowBlog)
 def get_post(blog_id, response : Response, db : Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id== blog_id).first()
     if not blog:
@@ -68,3 +68,12 @@ def delete_post(blog_id, db : Session = Depends(get_db)):
         blog.delete(synchronize_session=False)
         db.commit()
         return {f'Blog post deleted!'}
+
+@app.post('/user')
+def create_user(request: schemas.User, db: Session = Depends(get_db)):
+    new_user = models.User(**request.dict())  # Use the constructor to create a new instance
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return new_user

@@ -8,5 +8,17 @@ class Blog(BaseModel):
     tags:str
     # published: Optional [bool] = False
 
-class ShowBlog(Blog):
-    pass
+class ShowBlog(BaseModel):
+    title:str
+    body:str
+    author:str
+    tags:str
+    class config():
+        orm_mode = True
+
+class User(BaseModel):
+    name:str
+    email:str
+    password:str
+    user_type:str
+    status:str
