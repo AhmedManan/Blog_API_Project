@@ -22,3 +22,10 @@ class User(BaseModel):
     password:str
     user_type:str
     status:str
+
+class ShowUser(BaseModel):
+    name:str
+    email:str
+    status: str
+    class config():
+        orm_mode = True

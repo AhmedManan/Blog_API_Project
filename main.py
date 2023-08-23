@@ -9,7 +9,7 @@ app = FastAPI(
     openapi_prefix="",
     title="Blog API",
     version="1.0.0",
-    description="This API is Created for testing, by the developer. Not for commercial purpose. Thank you!",
+    description="This API is Created by the developer Manan Ahmed Broti. Not for commercial purpose. The Base URL for this API is set to: https://blog-rhhb.onrender.com/",
 )
 models.Base.metadata.create_all(bind=engine)
 
@@ -24,12 +24,12 @@ def get_db():
 async def credits():
     return {"message": "Welcome to the Blog API. Developed By MAnan Ahmed Broti. Website: AhmedManan.com"}
 
-@app.get('/blog', response_model=List[schemas.ShowBlog])
+@app.get('/blog', response_model=List[schemas.ShowBlog], tags=['Blogs'])
 def all_posts(db : Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     return blogs
 
-@app.post('/blog', status_code = 201)
+@app.post('/blog', status_code = 201, tags=['Blogs'])
 def create_post(request : schemas.Blog, db : Session = Depends(get_db)):
     new_blog=models.Blog(title=request.title,body=request.body)
     db.add(new_blog)
@@ -37,7 +37,7 @@ def create_post(request : schemas.Blog, db : Session = Depends(get_db)):
     db.refresh(new_blog)
     return new_blog
 
-@app.get('/blog/{blog_id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowBlog)
+@app.get('/blog/{blog_id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowBlog, tags=['Blogs'])
 def get_post(blog_id, response : Response, db : Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id== blog_id).first()
     if not blog:
@@ -46,7 +46,7 @@ def get_post(blog_id, response : Response, db : Session = Depends(get_db)):
         # return {'Details':'Blog post not found!'}
     return blog
 
-@app.put('/blog/{blog_id}', status_code=status.HTTP_202_ACCEPTED)
+@app.put('/blog/{blog_id}', status_code=status.HTTP_202_ACCEPTED, tags=['Blogs'])
 def update_post(blog_id, request : schemas.Blog, db : Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id== blog_id)
 
@@ -58,7 +58,7 @@ def update_post(blog_id, request : schemas.Blog, db : Session = Depends(get_db))
     return 'updated successfully'
 
 
-@app.delete('/blog/{blog_id}', status_code=status.HTTP_204_NO_CONTENT)
+@app.delete('/blog/{blog_id}', status_code=status.HTTP_204_NO_CONTENT, tags=['Blogs'])
 def delete_post(blog_id, db : Session = Depends(get_db)):
         blog = db.query(models.Blog).filter(models.Blog.id== blog_id)
 
@@ -69,7 +69,7 @@ def delete_post(blog_id, db : Session = Depends(get_db)):
         db.commit()
         return {f'Blog post deleted!'}
 
-@app.post('/user')
+@app.post('/user', status_code = 201, tags=['User'])
 def create_user(request: schemas.User, db: Session = Depends(get_db)):
     # hashed_password = pwd_context.hash(request.password)  # Hash the password
 
@@ -82,3 +82,12 @@ def create_user(request: schemas.User, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+
+@app.get('/user/{user_id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowUser, tags=['User'])
+def get_post(user_id:int, response : Response, db : Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id== user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f'User not available')
+        # response.status_code = status.HTTP_404_NOT_FOUND
+        # return {'Details':'Blog post not found!'}
+    return user
