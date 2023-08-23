@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, status, Response, HTTPException
 from typing import List
-import models, schemas
+import models, schemas, hashing
 from database import engine, SessionLocal
 from sqlalchemy.orm import Session
 
@@ -71,7 +71,12 @@ def delete_post(blog_id, db : Session = Depends(get_db)):
 
 @app.post('/user')
 def create_user(request: schemas.User, db: Session = Depends(get_db)):
-    new_user = models.User(**request.dict())  # Use the constructor to create a new instance
+    # hashed_password = pwd_context.hash(request.password)  # Hash the password
+
+    user_data = request.dict()
+    user_data["password"] = hashing.Hash.bcrypt(request.password)
+
+    new_user = models.User(**user_data)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
