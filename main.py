@@ -19,5 +19,5 @@ app.include_router(user.router)
 
 @app.get("/", status_code=status.HTTP_200_OK)
 async def credits():
-    return {"message": "Welcome to the Blog API. Developed By MAnan Ahmed Broti. Website: AhmedManan.com"}
+    return {"message": "Welcome to the Blog API. Developed By Manan Ahmed Broti. Website: www.AhmedManan.com"}
 
