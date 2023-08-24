@@ -24,14 +24,17 @@ def destroy(id:int,db: Session):
     db.commit()
     return 'done'
 
-def update(id:int,request:schemas.Blog, db:Session):
-    blog = db.query(models.Blog).filter(models.Blog.id == id)
+def perform_update(id: int, request: schemas.UpdateBlog, db: Session):
+    blog = db.query(models.Blog).filter(models.Blog.id == id).first()
 
-    if not blog.first():
+    if not blog:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Blog with id {id} not found")
 
-    blog.update(request)
+    # Update the attributes individually
+    blog.title = request.title
+    blog.body = request.body
+
     db.commit()
     return 'updated'
 
